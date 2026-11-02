@@ -1,27 +1,15 @@
-"use client";
+import { TaskList } from "@/components/task-list";
+import { caller } from "@/trpc/server";
 
-import { trpc } from "@/trpc/client";
+// Render on every request. Otherwise Next prerenders this page at build time,
+// with an empty store, and the list would never be server-rendered again.
+export const dynamic = "force-dynamic";
 
-// Temporary page used to verify the tRPC wiring. Replaced by the task list.
-export default function Home() {
-  const ping = trpc.ping.useQuery();
+export default async function Home() {
+  // SSR: fetch the first page in-process and pass it to the client component as
+  // initialData, so the HTML already contains the tasks. The client takes over
+  // from there (delete, load more) without an initial request.
+  const initialData = await caller.task.list({});
 
-  if (ping.isPending) {
-    return <p className="p-8">Loading...</p>;
-  }
-
-  if (ping.isError) {
-    return <p className="p-8 text-red-600">Error: {ping.error.message}</p>;
-  }
-
-  return (
-    <main className="space-y-2 p-8">
-      <p>Server says: {ping.data.message}</p>
-      <p>Server time: {ping.data.serverTime.toLocaleString()}</p>
-      <p>
-        serverTime is a Date instance:{" "}
-        {String(ping.data.serverTime instanceof Date)}
-      </p>
-    </main>
-  );
+  return <TaskList initialData={initialData} />;
 }
