@@ -45,6 +45,14 @@ export function TaskList({ initialData }: { initialData: ListOutput }) {
     onSettled: () => utils.task.list.invalidate(),
   });
 
+  const seedTasks = trpc.task.seed.useMutation({
+    onMutate: () => setMessage(null),
+    onSuccess: ({ created }) =>
+      setMessage({ type: "success", text: `${created} test tasks created` }),
+    onError: (error) => setMessage({ type: "error", text: error.message }),
+    onSettled: () => utils.task.list.invalidate(),
+  });
+
   const items = tasks.data?.pages.flatMap((page) => page.items) ?? [];
 
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -74,11 +82,21 @@ export function TaskList({ initialData }: { initialData: ListOutput }) {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Tasks</h1>
-        <Link href="/tasks/new" className={buttonClass}>
-          New task
-        </Link>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => seedTasks.mutate()}
+            disabled={seedTasks.isPending}
+            className={buttonClass}
+          >
+            {seedTasks.isPending ? "Creating…" : "Create default test tasks"}
+          </button>
+          <Link href="/tasks/new" className={buttonClass}>
+            New task
+          </Link>
+        </div>
       </div>
 
       {message && (

@@ -147,6 +147,25 @@ describe("task.byId, task.update and task.delete", () => {
   });
 });
 
+describe("task.seed", () => {
+  it("adds 50 sample tasks with #50 on top and #01 at the bottom", async () => {
+    const result = await caller.task.seed();
+
+    const { items } = await caller.task.list({ limit: 50 });
+    assert.equal(result.created, 50);
+    assert.equal(items.length, 50);
+    assert.match(items[0].titulo, /^#50 /);
+    assert.match(items.at(-1)!.titulo, /^#01 /);
+  });
+
+  it("adds another batch on every call", async () => {
+    await caller.task.seed();
+    await caller.task.seed();
+
+    assert.equal(tasks.length, 100);
+  });
+});
+
 // The error formatter only runs on the HTTP layer, so these go through the
 // fetch handler instead of the caller.
 describe("HTTP error responses", () => {

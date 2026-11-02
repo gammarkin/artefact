@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { nextSeq, tasks, type Task } from "../store";
+import { sampleTasks } from "../sample-tasks";
+import { addTask, tasks, type Task } from "../store";
 import { publicProcedure, router } from "../trpc";
 
 const taskFields = {
@@ -55,16 +56,16 @@ export const taskRouter = router({
     .input(z.object({ id: z.string() }))
     .query(({ input }) => tasks[findIndexOrThrow(input.id)]),
 
-  create: publicProcedure.input(z.object(taskFields)).mutation(({ input }) => {
-    const task: Task = {
-      id: crypto.randomUUID(),
-      titulo: input.titulo,
-      descricao: input.descricao,
-      dataCriacao: new Date(),
-      seq: nextSeq(),
-    };
-    tasks.unshift(task);
-    return task;
+  create: publicProcedure
+    .input(z.object(taskFields))
+    .mutation(({ input }) => addTask(input)),
+
+  // Demo helper: adds a batch of generic sample tasks on each call. Added
+  // oldest first, so the last one ends up on top.
+  seed: publicProcedure.mutation(() => {
+    const samples = sampleTasks();
+    for (const sample of samples) addTask(sample);
+    return { created: samples.length };
   }),
 
   // Full replace: the edit form always sends both fields, so an omitted

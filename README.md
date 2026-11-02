@@ -8,6 +8,7 @@ A simple task manager: create, list, edit and delete tasks. Built with Next.js 1
 - Create and edit tasks with the same form, validated on the client and on the server
 - Delete tasks straight from the list, with success and error feedback
 - Loading, success and error states on every operation, with backend errors shown on screen
+- A "Create default test tasks" button that adds 50 generic tasks, to try pagination and infinite scroll right away
 
 ## Stack
 
@@ -25,6 +26,8 @@ Requirements: Node.js 18.18 or newer and npm. No environment variables are neede
 npm install
 npm run dev      # http://localhost:3000
 ```
+
+On the home page, **Create default test tasks** adds 50 sample tasks, so you can try the list, pagination and infinite scroll without typing them.
 
 Production build:
 
@@ -52,6 +55,7 @@ src/
 ├── server/
 │   ├── trpc.ts                   # tRPC setup: superjson and error formatter
 │   ├── store.ts                  # In-memory task storage
+│   ├── sample-tasks.ts           # Generic data for the test tasks button
 │   └── routers/
 │       ├── _app.ts               # Root router
 │       ├── task.ts               # Task procedures
@@ -72,6 +76,9 @@ All procedures live under `task` (for example `trpc.task.list`). Inputs are vali
 | `create` | `{ titulo, descricao? }` | the created task | `BAD_REQUEST` for a blank title |
 | `update` | `{ id, titulo, descricao? }` | the updated task | `NOT_FOUND`, `BAD_REQUEST` |
 | `delete` | `{ id }` | the deleted task | `NOT_FOUND` |
+| `seed` | none | `{ created }` | none |
+
+`seed` is a demo helper, not part of the task contract: each call adds 50 generic sample tasks.
 
 A task has `id` (UUID), `titulo`, `descricao?`, `dataCriacao` (Date) and `seq`, an internal creation counter used by the pagination cursor (see below). The field names `titulo`, `descricao` and `dataCriacao` follow the model specification.
 

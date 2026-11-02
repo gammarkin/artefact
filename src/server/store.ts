@@ -14,13 +14,25 @@ const globalForStore = globalThis as unknown as {
   lastSeq?: number;
 };
 
-// Newest first: create() unshifts, so the array is already in the order that
+// Newest first: addTask() unshifts, so the array is already in the order that
 // list() returns and no sorting (or timestamp tie-breaking) is needed.
 export const tasks: Task[] = (globalForStore.tasks ??= []);
 
 // Never reused, even after deletes. Kept on globalThis with the array: if it
 // restarted while the tasks survived, new tasks would get repeated values.
-export function nextSeq() {
+function nextSeq() {
   globalForStore.lastSeq = (globalForStore.lastSeq ?? 0) + 1;
   return globalForStore.lastSeq;
+}
+
+export function addTask(input: { titulo: string; descricao?: string }): Task {
+  const task: Task = {
+    id: crypto.randomUUID(),
+    titulo: input.titulo,
+    descricao: input.descricao,
+    dataCriacao: new Date(),
+    seq: nextSeq(),
+  };
+  tasks.unshift(task);
+  return task;
 }
