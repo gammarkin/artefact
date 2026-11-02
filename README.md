@@ -4,7 +4,7 @@ A simple task manager: create, list, edit and delete tasks. Built with Next.js 1
 
 ## Features
 
-- Task list rendered on the server (SSR), newest first, with a "Load more" button for pagination
+- Task list rendered on the server (SSR), newest first, with infinite scroll
 - Create and edit tasks with the same form, validated on the client and on the server
 - Delete tasks straight from the list, with success and error feedback
 - Loading, success and error states on every operation, with backend errors shown on screen
@@ -46,7 +46,7 @@ src/
 │   ├── layout.tsx                # Root layout, wraps the app in the tRPC provider
 │   └── globals.css               # Tailwind import and color tokens
 ├── components/
-│   ├── task-list.tsx             # List, delete with feedback, "Load more"
+│   ├── task-list.tsx             # List, delete with feedback, infinite scroll
 │   └── task-form.tsx             # Form shared by create and edit
 ├── server/
 │   ├── trpc.ts                   # tRPC setup: superjson and error formatter
@@ -103,10 +103,16 @@ Two details make it work: `export const dynamic = "force-dynamic"`, because othe
 
 ### Cache invalidation
 
-Create, update and delete invalidate the `task.list` queries so the list reflects the change. Two cases need more than a plain invalidate:
+Create, update and delete invalidate the `task.list` queries so the list reflects the change. Two details matter:
 
-- The form refetches the list (`refetchType: "all"`) before redirecting. The list is unmounted while the form is open, so a plain invalidate would only mark it stale and it would briefly show its old content after the redirect. The form also stays locked during the redirect to prevent a double submit.
+- The list query has `gcTime: 0`. It is seeded from the server on every mount, so a client cache that outlives the page would flash stale content when coming back from the form. Dropping it on unmount means the list always renders fresh server data. Invalidating cannot do this job: it only marks an unmounted query stale, and `refetchType: "all"` skips queries that were never fetched on the client, like this one.
 - Delete invalidates on error too, so a task already removed elsewhere (`NOT_FOUND`) disappears from the list instead of lingering.
+
+The form also stays locked during the redirect, to prevent a double submit.
+
+### Infinite scroll
+
+A native `IntersectionObserver` watches a sentinel below the list and calls `fetchNextPage` when it gets close to the viewport. It only observes while no request is in flight: loading a page during the refetch that follows a delete would cancel that refetch and leave the deleted task on screen. It also stops after a failed page, and a "Try again" button resumes it; otherwise a failure would retry forever.
 
 ### Smaller choices
 
