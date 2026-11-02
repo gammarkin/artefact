@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { tasks, type Task } from "../store";
+import { nextSeq, tasks, type Task } from "../store";
 import { publicProcedure, router } from "../trpc";
 
 const taskFields = {
@@ -26,27 +26,29 @@ export const taskRouter = router({
     .input(
       z.object({
         limit: z.number().int().min(1).max(50).default(10),
-        cursor: z.string().optional(),
+        cursor: z
+          .string()
+          .regex(/^\d+$/, "Invalid cursor")
+          .transform(Number)
+          .optional(),
       }),
     )
     .query(({ input }) => {
-      // The cursor is the id of the last item seen. Unlike an offset, it stays
-      // correct when new tasks are added at the top between page requests.
-      let start = 0;
-      if (input.cursor !== undefined) {
-        const cursorIndex = tasks.findIndex((task) => task.id === input.cursor);
-        if (cursorIndex === -1) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Invalid cursor",
-          });
-        }
-        start = cursorIndex + 1;
-      }
+      // The cursor is the seq of the last item seen. Comparing seq values
+      // instead of looking that item up keeps it valid when the task was
+      // deleted, or others were added, between page requests.
+      const { limit, cursor } = input;
+      const remaining =
+        cursor === undefined
+          ? tasks
+          : tasks.filter((task) => task.seq < cursor);
 
-      const items = tasks.slice(start, start + input.limit);
-      const hasMore = start + input.limit < tasks.length;
-      return { items, nextCursor: hasMore ? items.at(-1)?.id : undefined };
+      const items = remaining.slice(0, limit);
+      const hasMore = remaining.length > limit;
+      return {
+        items,
+        nextCursor: hasMore ? String(items[limit - 1].seq) : undefined,
+      };
     }),
 
   byId: publicProcedure
@@ -59,13 +61,14 @@ export const taskRouter = router({
       titulo: input.titulo,
       descricao: input.descricao,
       dataCriacao: new Date(),
+      seq: nextSeq(),
     };
     tasks.unshift(task);
     return task;
   }),
 
   // Full replace: the edit form always sends both fields, so an omitted
-  // descricao clears it. id and dataCriacao are never changed.
+  // descricao clears it. id, dataCriacao and seq are never changed.
   update: publicProcedure
     .input(z.object({ id: z.string(), ...taskFields }))
     .mutation(({ input }) => {
