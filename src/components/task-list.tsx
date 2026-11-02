@@ -30,6 +30,9 @@ export function TaskList({ initialData }: { initialData: ListOutput }) {
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialData: { pages: [initialData], pageParams: [undefined] },
+      // Seeded from the server on every mount, so a cache that outlives the
+      // page would only flash stale content when coming back from the form.
+      gcTime: 0,
     },
   );
 

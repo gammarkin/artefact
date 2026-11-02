@@ -22,10 +22,7 @@ export function TaskForm({ task }: { task?: Task }) {
   const [saved, setSaved] = useState(false);
 
   async function onSuccess() {
-    // The list is unmounted while this form is open, so a plain invalidate
-    // would only mark it stale and it would flash its old content after the
-    // redirect. "all" refetches it now, before we leave.
-    await utils.task.list.invalidate(undefined, { refetchType: "all" });
+    await utils.task.list.invalidate();
     setSaved(true);
     router.push("/");
   }
