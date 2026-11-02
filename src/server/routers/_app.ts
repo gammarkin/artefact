@@ -11,6 +11,4 @@ export const appRouter = router({
   })),
 });
 
-// The client imports only this type, never the router itself, so no server
-// code ends up in the browser bundle.
 export type AppRouter = typeof appRouter;

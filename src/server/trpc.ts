@@ -2,9 +2,8 @@ import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-// superjson is required because the task model has a Date field (dataCriacao).
-// Plain JSON would turn it into a string; superjson restores a real Date on the
-// other side. The same transformer must be configured on the client link.
+// superjson keeps Date fields (dataCriacao) as real Dates across the wire.
+// The client link must be configured with the same transformer.
 const t = initTRPC.create({
   transformer: superjson,
   errorFormatter({ shape, error }) {

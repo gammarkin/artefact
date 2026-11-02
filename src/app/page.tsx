@@ -2,8 +2,7 @@
 
 import { trpc } from "@/trpc/client";
 
-// Temporary page that only verifies the tRPC wiring end to end.
-// It is replaced by the real task list in step 3.
+// Temporary page used to verify the tRPC wiring. Replaced by the task list.
 export default function Home() {
   const ping = trpc.ping.useQuery();
 

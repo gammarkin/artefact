@@ -10,8 +10,8 @@ import type { AppRouter } from "@/server/routers/_app";
 export const trpc = createTRPCReact<AppRouter>();
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  // Created inside useState so each browser session gets one stable instance
-  // that survives re-renders, instead of a module-level singleton.
+  // Created in useState, not at module level: a module-level client would be
+  // shared across requests during SSR and leak cached data between them.
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
