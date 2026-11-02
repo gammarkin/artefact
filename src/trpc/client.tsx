@@ -12,7 +12,12 @@ export const trpc = createTRPCReact<AppRouter>();
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
   // Created in useState, not at module level: a module-level client would be
   // shared across requests during SSR and leak cached data between them.
-  const [queryClient] = useState(() => new QueryClient());
+  // staleTime > 0 so data server-rendered into the page is not refetched
+  // right away on mount. Mutations invalidate it explicitly.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({ defaultOptions: { queries: { staleTime: 60 * 1000 } } }),
+  );
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [httpBatchLink({ url: "/api/trpc", transformer: superjson })],
