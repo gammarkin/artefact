@@ -15,6 +15,7 @@ A simple task manager: create, list, edit and delete tasks. Built with Next.js 1
 - [tRPC](https://trpc.io) v11 with [TanStack Query](https://tanstack.com/query) v5
 - [Zod](https://zod.dev) 4 for validation and [superjson](https://github.com/blitz-js/superjson) as the transformer
 - [Tailwind CSS](https://tailwindcss.com) 4
+- Node's built-in test runner (`node:test`) with [tsx](https://tsx.is) for the tests
 
 ## Running locally
 
@@ -32,7 +33,7 @@ npm run build
 npm start
 ```
 
-`npm run lint` runs ESLint. Tasks live in server memory, so restarting the server clears them.
+`npm test` runs the router tests and `npm run lint` runs ESLint. Tasks live in server memory, so restarting the server clears them.
 
 ## Project structure
 
@@ -53,7 +54,8 @@ src/
 │   ├── store.ts                  # In-memory task storage
 │   └── routers/
 │       ├── _app.ts               # Root router
-│       └── task.ts               # Task procedures
+│       ├── task.ts               # Task procedures
+│       └── task.test.ts          # Router tests
 └── trpc/
     ├── client.tsx                # React provider (tRPC + TanStack Query)
     └── server.ts                 # Server-side caller used by Server Components
