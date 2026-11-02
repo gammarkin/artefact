@@ -2,7 +2,7 @@
 
 import type { inferRouterOutputs } from "@trpc/server";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AppRouter } from "@/server/routers/_app";
 import { trpc } from "@/trpc/client";
 
@@ -46,6 +46,31 @@ export function TaskList({ initialData }: { initialData: ListOutput }) {
   });
 
   const items = tasks.data?.pages.flatMap((page) => page.items) ?? [];
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const { hasNextPage, isFetching, isFetchNextPageError, fetchNextPage } =
+    tasks;
+
+  // Infinite scroll: load the next page when the sentinel below the list nears
+  // the viewport. It only observes while idle, for two reasons:
+  // - fetching during the refetch that follows a delete would cancel it and
+  //   leave the deleted task on screen;
+  // - after a failed page it would retry forever (the user retries by button).
+  // The observer is recreated after each fetch, so it fires again if the
+  // sentinel is still visible (tall screens) and keeps loading until it is not.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasNextPage || isFetching || isFetchNextPageError) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) fetchNextPage();
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetching, isFetchNextPageError, fetchNextPage]);
 
   return (
     <main className="mx-auto max-w-2xl p-6">
@@ -118,15 +143,24 @@ export function TaskList({ initialData }: { initialData: ListOutput }) {
         </ul>
       )}
 
-      {tasks.hasNextPage && (
+      {isFetchNextPageError && (
         <button
           type="button"
-          onClick={() => tasks.fetchNextPage()}
+          onClick={() => fetchNextPage()}
           disabled={tasks.isFetchingNextPage}
           className={`${buttonClass} mt-4`}
         >
-          {tasks.isFetchingNextPage ? "Loading…" : "Load more"}
+          {tasks.isFetchingNextPage ? "Loading…" : "Try again"}
         </button>
+      )}
+
+      {hasNextPage && !isFetchNextPageError && (
+        <div
+          ref={sentinelRef}
+          className="py-6 text-center text-sm text-foreground/60"
+        >
+          {tasks.isFetchingNextPage && <span role="status">Loading…</span>}
+        </div>
       )}
     </main>
   );
