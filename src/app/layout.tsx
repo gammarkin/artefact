@@ -12,9 +12,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Browser extensions (ColorZilla, Dark Reader, Grammarly...) add attributes to
+  // <html> and <body> before React hydrates, which triggers a false hydration
+  // warning. It only silences those two elements; their children are still checked.
   return (
-    <html lang="en">
-      <body className="antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased" suppressHydrationWarning>
         <TRPCProvider>{children}</TRPCProvider>
       </body>
     </html>
